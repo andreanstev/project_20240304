@@ -4,8 +4,8 @@
 - employees.csv & timesheets.csv
 
 # Quick note
-Just run the "etl.sql" script to do the task. 
-Make sure that the table "employee" and "timesheets" exist and following the schema in the "source_table.sql".
+Just run the "etl.sql" script to do the task.  
+Make sure that the table "employee" and "timesheets" exist and following the schema in the "source_table.sql".  
 monthly_salary_per_hour.csv -> check this out to see the final result
 
 # Procedure
