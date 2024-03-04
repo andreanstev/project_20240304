@@ -3,6 +3,7 @@ from datetime import datetime, timedelta
 from sqlalchemy import create_engine, text
 from psycopg2.errors import UniqueViolation, IntegrityError
 import os
+import sys
 
 from dotenv import load_dotenv
 _ = load_dotenv()
@@ -76,29 +77,33 @@ def process_data_final():
 
     # Final data to be loaded
     monthly_salary_per_hour_df = monthly_salary_per_hour_df[['branch_id', 'year', 'month', 'salary_per_hour']].sort_values(['year', 'month', 'branch_id'])
-    monthly_salary_per_hour_df.to_sql("monthly_salary_per_hour_py", engine, if_exists="replace", index=False, method='multi')
+    monthly_salary_per_hour_df.to_sql("monthly_salary_per_hour", engine, if_exists="replace", index=False, method='multi')
     print(monthly_salary_per_hour_df.head())
 
 if __name__ == "__main__":
     # Initialize business date
-    business_dt = (datetime.now()-timedelta(days=1)).date() # assume that the script is run after 12am daily
-    business_dt = str(business_dt)
-    business_dt = "2019-08-22" # For testing purpose
+    # business_dt = (datetime.now()-timedelta(days=1)).date() # assume that the script is run after 12am daily
+    # business_dt = str(business_dt)
+    business_dt = str(sys.argv[1])
+    # business_dt = "2019-08-22" # For testing purpose
 
-    # Extract from CSV
-    employee_df = pd.read_csv("employees.csv")
-    timesheet_df = pd.read_csv("timesheets.csv")
+    if business_dt:
+        # Extract from CSV
+        employee_df = pd.read_csv("employees.csv")
+        timesheet_df = pd.read_csv("timesheets.csv")
 
-    # TIMESHEETS DATA
-    # Adjust data type
-    timesheet_df["date"] = pd.to_datetime(timesheet_df["date"])
+        # TIMESHEETS DATA
+        # Adjust data type
+        timesheet_df["date"] = pd.to_datetime(timesheet_df["date"])
 
-    # Get timesheets for current date
-    date_obj = datetime.strptime(business_dt, "%Y-%m-%d")
-    timesheet_df_daily = timesheet_df[timesheet_df["date"]==business_dt]
+        # Get timesheets for current date
+        date_obj = datetime.strptime(business_dt, "%Y-%m-%d")
+        timesheet_df_daily = timesheet_df[timesheet_df["date"]==business_dt]
 
-    if not timesheet_df_daily.empty:   
-        process_data_staging(employee_df, timesheet_df_daily)
-        print("Data processed successfully.")
+        if not timesheet_df_daily.empty:   
+            process_data_staging(employee_df, timesheet_df_daily)
+            print("Data processed successfully.")
+        else:
+            print("No data to be processed for current business date")
     else:
-        print("No data to be processed for current business date")
+        print(f"Please provide business date. For example: python etl.py 2019-08-22")
