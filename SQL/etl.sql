@@ -12,8 +12,13 @@ WITH employee_cleaned AS ( -- make sure that employee_id are unique for each bra
 	SELECT *,
 	EXTRACT(year FROM t.date) "year", 
 	EXTRACT(month FROM t.date) "month", 
-	EXTRACT(epoch FROM (COALESCE(t.checkout, '18:00:00'::time)  - COALESCE(t.checkin, '09:00:00'::time)))/3600 work_hour -- checkin and checkout can be fill with default value instead dropping it (assume that employee must checkin and checkout at least once a day)
-	FROM timesheets t
+	EXTRACT(epoch FROM 
+       CASE WHEN checkout < checkin AND checkout IS NOT NULL AND checkin IS NOT NULL THEN
+           (checkout + interval '1 day')::time - checkin -- assume that if checkout is before checkin, the employee are checkout on the next day
+       ELSE
+           (COALESCE(t.checkout, '18:00:00'::time)  - COALESCE(t.checkin, '09:00:00'::time)) -- checkin and checkout can be fill with default value instead dropping it (assume that employee must checkin and checkout at least once a day)
+       END) / 3600 work_hour
+    FROM timesheets t
 	WHERE date < now()::date -- Fetch all data until previous day (assume that the script is run after 12am daily)
 	-- AND t.checkin IS NOT NULL
 	-- AND t.checkout IS NOT NULL
