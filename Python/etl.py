@@ -43,7 +43,14 @@ def process_data_staging(employee_df, timesheet_df_daily):
     employee_df["resign_date"] = pd.to_datetime(employee_df["resign_date"])
 
     # Adjust column name
-    employee_cleaned_df = employee_df.rename(columns = {"employe_id":"employee_id"})
+    employee_df = employee_df.rename(columns = {"employe_id":"employee_id"})
+
+    # Clean duplicate data
+    employee_cleaned_df = employee_df.groupby(['branch_id', 'employee_id']).agg(
+        salary=('salary', 'max'),
+        join_date=('join_date', 'min'),
+        resign_date=('resign_date', 'max')
+    ).reset_index()
 
     # MERGE DATA
     combined_df = timesheet_df_daily.merge(employee_cleaned_df, on='employee_id', how='left')
