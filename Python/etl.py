@@ -25,7 +25,16 @@ def process_data_staging(employee_df, timesheet_df_daily):
     timesheet_df_daily['month'] = timesheet_df_daily['date'].dt.month
     timesheet_df_daily['checkin'] = pd.to_datetime(timesheet_df_daily['checkin'].fillna("09:00:00"), format='%H:%M:%S')
     timesheet_df_daily['checkout'] = pd.to_datetime(timesheet_df_daily['checkout'].fillna("18:00:00"), format='%H:%M:%S')
-    timesheet_df_daily['work_hour'] = (timesheet_df_daily['checkout'] - timesheet_df_daily['checkin']).dt.total_seconds() / 3600
+
+    def calculate_hours(row):
+        checkin, checkout = row['checkin'], row['checkout']
+        if checkout < checkin:
+            return (checkout + pd.Timedelta(days=1)) - checkin
+        else:
+            return checkout - checkin
+    timesheet_df_daily['work_hour'] = timesheet_df_daily[['checkin', 'checkout']].apply(calculate_hours, axis=1)
+    timesheet_df_daily['work_hour'] = timesheet_df_daily['work_hour'].dt.total_seconds() / 3600
+
     # timesheet_df_daily = timesheet_df_daily[timesheet_df_daily['checkin'].notnull() & timesheet_df_daily['checkout'].notnull()]
 
     # EMPLOYEE DATA
@@ -106,4 +115,4 @@ if __name__ == "__main__":
         else:
             print("No data to be processed for current business date")
     else:
-        print(f"Please provide business date. For example: python etl.py 2019-08-22")
+        print(f"Please provide business date. For example: python etl.py 2019-08-21")
